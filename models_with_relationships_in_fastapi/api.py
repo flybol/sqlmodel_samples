@@ -70,10 +70,11 @@ def delete_team(team_id: int,session: SessionDep):
 @hero_router.post("/",response_model=HeroPublic)
 def create_heros(session: SessionDep,hero: HeroCreate):
     """ 创建英雄"""
-    hashed_password = hash_password(hero.password)
-    extra_data = {"hashed_password": hashed_password}
-
-    hero_db = Hero.model_validate(hero,update=extra_data)
+    # hashed_password = hash_password(hero.password)
+    # extra_data = {"hashed_password": hashed_password}
+    # 字段转换
+    hero_data = hero.to_create_dict()
+    hero_db = Hero.model_validate(hero_data)
     session.add(hero_db)
     session.commit()
     session.refresh(hero_db)

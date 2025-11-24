@@ -35,7 +35,22 @@ class Hero(HeroBase, table=True):
     team: Team | None = Relationship(back_populates="heroes")
 
 class HeroCreate(HeroBase):
-    password: str
+    # 把这个字段从“序列化输出/导出结果”里排除掉，
+    # 避免它出现在 model_dump()、dict()、json()、响应体等地方。
+    # 问题：会不会影响参数校验？
+    # 不会，exclude=True 只管“输出”，不影响“输入”。
+    password: SecretStr = Field(exclude=True)
+
+    def to_create_dict(self):
+        """生成可以直接用于 sqlmodel_create 的字典
+        作用：负责把输入变成可落库的数据
+        """
+        data = self.model_dump(exclude_unset=True)
+        raw_pwd = self.password.get_secret_value()
+        data.pop("password", None)
+        data.update(hashed_password=hash_password(raw_pwd))
+        print("创建数据：", data)
+        return data
 
 def hash_password(password: str) -> str:
     # Use something like passlib here
