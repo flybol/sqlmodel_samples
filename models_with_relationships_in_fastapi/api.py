@@ -1,7 +1,7 @@
 
 from fastapi import APIRouter,HTTPException,Query
-from models import *
-from deps import *
+from models_with_relationships_in_fastapi.models import *
+from models_with_relationships_in_fastapi.deps import *
 team_router = APIRouter(prefix="/teams",tags=["teams"])
 hero_router = APIRouter(prefix="/heroes",tags=["heroes"])
 

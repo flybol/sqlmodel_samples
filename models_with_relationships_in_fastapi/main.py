@@ -1,9 +1,9 @@
 
 
 from contextlib import asynccontextmanager
-from api import *
 from fastapi import FastAPI
-from db import close_engine,create_db_and_tables
+from models_with_relationships_in_fastapi.api import *
+from models_with_relationships_in_fastapi.db import close_engine,create_db_and_tables
 
 @asynccontextmanager 
 async def lifespan(app: FastAPI):
