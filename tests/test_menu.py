@@ -1,3 +1,4 @@
+import json
 from sqlmodel import Session,select,col
 from models.models_v2 import *
 from .conftest import *
@@ -210,3 +211,51 @@ def delete_menu_with_children(session:Session):
 
     session.commit()
     print("已删除节点及其所有子孙：", to_delete_ids)
+
+def test_get_menu_path(session:Session):
+    """获取菜单路径"""
+    menu_id: int = 9
+    menu = session.get(Menu, menu_id)
+    if not menu:
+        return []
+    path = []
+    current = menu
+    while current is not None:
+        path.append(current)
+        current = current.parent  # 通过关系往上找
+    
+    # 从根到叶子排序
+    path.reverse()
+    for menu in path:
+        print(menu.name, end="/")
+
+
+def test_menu_tree(session:Session):
+    """构建整棵树（返回 Python 嵌套结构，给前端用）"""
+    all_menus = session.exec(select(Menu)).all()
+    # 非顶级菜单
+    menu_map: dict[int, Menu] = {m.id: m for m in all_menus if m.id is not None}
+    children_map: dict[int | None, list[Menu]] = defaultdict(list)
+
+    # 构建 children_map
+    for m in all_menus:
+        children_map[m.parent_id].append(m)
+
+    def build_node(m: Menu) -> dict:
+        return {
+            "id": m.id,
+            "name": m.name,
+            "path": m.path,
+            "children": [
+                build_node(child)
+                for child in sorted(children_map.get(m.id, []), key=lambda x: x.sort_order)
+            ],
+        }
+    
+    # 顶级节点 parent_id = None
+    root_nodes = [
+        build_node(m)
+        # 获取所有顶级菜单,按sort_order排序
+        for m in sorted(children_map[None], key=lambda x: x.sort_order)
+    ]
+    print(json.dumps(root_nodes, indent=2,ensure_ascii=False))

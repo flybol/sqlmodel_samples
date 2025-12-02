@@ -28,3 +28,14 @@ class Menu(ORMBase,table=True):
         sa_relationship_kwargs={"remote_side": "Menu.id"},
     )
     children: List["Menu"] = Relationship(back_populates="parent")
+    permission_id: int|None = Field(default=None, foreign_key="sys_permission.id")
+    permissions: List["Permission"] = Relationship(back_populates="menus")
+    
+class Permission(ORMBase,table=True):
+    __tablename__:str = "sys_permission"
+    name: str = Field(max_length=100, description="权限名称")
+    code: str = Field(max_length=255, description="权限标识")
+    description: str|None = Field(default=None,max_length=255, description="权限描述")
+    is_enabled: bool = Field(default=True, description="是否启用")
+
+    menus: List[Menu] = Relationship(back_populates="permissions")
