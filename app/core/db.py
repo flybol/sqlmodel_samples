@@ -1,12 +1,12 @@
-
 import logging
 from typing import AsyncGenerator
 from sqlmodel import SQLModel
-from sqlalchemy.ext.asyncio import create_async_engine,async_sessionmaker,AsyncEngine
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncEngine
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 logger = logging.getLogger(__name__)
-_engine: AsyncEngine|None = None
+_engine: AsyncEngine | None = None
+
 
 async def init_engine():
     global _engine
@@ -17,7 +17,7 @@ async def init_engine():
             connect_args={"check_same_thread": False},
             future=True,
             pool_pre_ping=True,
-            pool_recycle=-1
+            pool_recycle=-1,
         )
         async with _engine.connect() as conn:
             await conn.exec_driver_sql("PRAGMA foreign_keys=ON")
@@ -27,12 +27,17 @@ async def init_engine():
             else:
                 logger.info("sqlite 外键未开启")
 
-SessionLocalFactory = async_sessionmaker(_engine,
-                                         class_=AsyncSession,
-                                         expire_on_commit=False)
-async def get_session()->AsyncGenerator[AsyncSession,None]:
-    async with SessionLocalFactory() as session:
+
+AsyncSessionFactory = async_sessionmaker(
+    bind=_engine, class_=AsyncSession, autoflush=False, expire_on_commit=False
+)
+
+
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
+    assert _engine is not None, "Engine is not initialized"
+    async with AsyncSessionFactory() as session:
         yield session
+
 
 async def close_engine():
     assert _engine is not None, "Engine is not initialized"
@@ -40,8 +45,9 @@ async def close_engine():
         await _engine.dispose()
 
 
-from app.models.rbac_models import *
-async def init_db_and_tables(is_drop:bool=False,is_create:bool=True):
+async def init_db_and_tables(is_drop: bool = False, is_create: bool = True):
+    from app.models.user_model import User
+
     global _engine
     if _engine is None:
         await init_engine()
