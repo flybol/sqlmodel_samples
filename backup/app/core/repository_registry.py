@@ -6,6 +6,8 @@ _REPOSITORY_REGISTRY: Dict[str, Type[Any]] = {}
 
 
 def register_repository(name: str):
+    """在 import 仓储模块时，把仓储类注册到 _REPOSITORY_REGISTRY"""
+
     def decorator(cls: Type[Any]):
         _REPOSITORY_REGISTRY[name] = cls
         return cls
